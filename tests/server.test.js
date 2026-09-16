@@ -42,6 +42,34 @@ describe('PDF Upload/Download', () => {
             expect(res.text).toBe('No file uploaded.');
         }));
     });
+    describe('List files', () => {
+        it('should list uploaded files with labels', () => __awaiter(void 0, void 0, void 0, function* () {
+            fs_1.default.writeFileSync(path_1.default.join(uploadDir, 'listed.pdf'), 'x');
+            const res = yield (0, supertest_1.default)(index_1.app).get('/api/files');
+            expect(res.statusCode).toBe(200);
+            expect(res.body).toEqual(expect.arrayContaining([{ name: 'listed.pdf', label: null }]));
+        }));
+    });
+    describe('AI shelf label', () => {
+        it('should reject invalid filenames', () => __awaiter(void 0, void 0, void 0, function* () {
+            const res = yield (0, supertest_1.default)(index_1.app)
+                .post('/api/ai/shelf-label')
+                .send({ filename: '../secrets' });
+            expect(res.statusCode).toBe(400);
+        }));
+        it('should return 503 when Groq is not configured', () => __awaiter(void 0, void 0, void 0, function* () {
+            const prior = process.env.GROQ_API_KEY;
+            delete process.env.GROQ_API_KEY;
+            fs_1.default.writeFileSync(path_1.default.join(uploadDir, 'ai-test.pdf'), 'pdf');
+            const res = yield (0, supertest_1.default)(index_1.app)
+                .post('/api/ai/shelf-label')
+                .send({ filename: 'ai-test.pdf', hint: 'demo' });
+            if (prior) {
+                process.env.GROQ_API_KEY = prior;
+            }
+            expect(res.statusCode).toBe(503);
+        }));
+    });
     describe('Download PDF', () => {
         it('should download an existing PDF file', () => __awaiter(void 0, void 0, void 0, function* () {
             const filename = 'test.pdf';
@@ -55,6 +83,11 @@ describe('PDF Upload/Download', () => {
             const res = yield (0, supertest_1.default)(index_1.app).get('/download/nonexistent.pdf');
             expect(res.statusCode).toBe(404);
             expect(res.text).toBe('File not found');
+        }));
+        it('should block path traversal outside uploads', () => __awaiter(void 0, void 0, void 0, function* () {
+            const res = yield (0, supertest_1.default)(index_1.app).get('/download/..%2F..%2Fpackage.json');
+            expect(res.statusCode).toBe(400);
+            expect(res.text).toContain('uploads directory');
         }));
     });
 });
