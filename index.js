@@ -8,9 +8,13 @@ const express_1 = __importDefault(require("express"));
 const multer_1 = __importDefault(require("multer"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const routes_1 = require("./ai/routes");
 exports.app = (0, express_1.default)();
 const upload = (0, multer_1.default)({ dest: 'uploads/' });
 exports.app.use(express_1.default.static('public'));
+exports.app.use(express_1.default.json());
+// AI features: assistant agent, upload triage, and component status.
+exports.app.use('/ai', routes_1.aiRouter);
 exports.app.post('/upload', upload.single('pdf'), (req, res) => {
     if (!req.file) {
         return res.status(400).send('No file uploaded.');

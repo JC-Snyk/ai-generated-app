@@ -12,6 +12,7 @@ By using the Snyk IDE extension, we can find the vulnerabilities and fix them wi
 2. Build the app by running the `npm install` command.
 3. Transpile TypeScript (`index.ts`) to JavaScript (`index.js`) by running the `tsc` command.
 4. Run the `node index.js` command to run the app, and access it at http://localhost:3000.
+5. *Optional:* copy `.env.example` to `.env` and set `ANTHROPIC_API_KEY` to enable the AI features. The app runs without it; only the `/ai` routes are disabled.
 
 ## Scanning for Vulnerabilities
 
@@ -24,6 +25,35 @@ To enable Snyk in VSCode, run Command+Shift+P, type "snyk," and select `Snyk: Se
 **Tip:** To quickly reload VSCode, run Command+Shift+P, type "reload," and select `Developer: Reload Window`.
 
 **Tip:** To reset all changes you made during your demo, including source code and Snyk IDE extension settings, run `git reset --hard HEAD` followed by `git clean -fd`.
+
+## AI Components
+
+This repo also contains working AI components, so that [Evo by Snyk](https://docs.snyk.io/evo-by-snyk)
+can discover and display the AI assets in the codebase. They live in the `ai/`
+directory — see [`ai/README.md`](ai/README.md) for the full breakdown.
+
+| Evo asset type | What's in the repo |
+| --- | --- |
+| Models | `claude-opus-5` (vault assistant) and `claude-haiku-4-5` (upload triage), declared in `ai/ai-config.json` |
+| Agents | A LangGraph ReAct agent (`ai/triage-agent.ts`) and an Anthropic SDK tool-runner agent (`ai/agent.ts`) |
+| Tools | `list_documents`, `read_document`, `search_documents` (`ai/tools.ts`) |
+| MCP servers | `pdf-vault`, over stdio (`ai/mcp-server.ts`, configured in `.mcp.json`) |
+
+The features are a natural extension of the app: ask questions about the PDFs
+you uploaded (`POST /ai/ask`, also wired into the web UI), classify an upload
+(`GET /ai/triage/:filename`), or connect an MCP client to the vault
+(`npm run mcp`).
+
+### Scanning for AI Assets
+
+Generate an AI-BOM for this repo with the Snyk CLI:
+
+```bash
+snyk aibom --experimental
+```
+
+The scan reports the models, agents, tools, and MCP servers listed above. To
+check them against your tenant's Evo policies, run `snyk aibom test`.
 
 ## Exploiting the Path Traversal Vulnerability
 

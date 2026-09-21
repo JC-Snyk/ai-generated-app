@@ -1,0 +1,35 @@
+{
+  "models": {
+    "assistant": {
+      "id": "claude-opus-5",
+      "provider": "anthropic",
+      "role": "document-assistant",
+      "maxTokens": 16000,
+      "effort": "high"
+    },
+    "triage": {
+      "id": "claude-haiku-4-5",
+      "provider": "anthropic",
+      "role": "upload-classifier",
+      "maxTokens": 1024
+    }
+  },
+  "agents": {
+    "assistant": {
+      "name": "pdf-vault-assistant",
+      "framework": "anthropic-sdk-tool-runner",
+      "model": "assistant",
+      "maxIterations": 8
+    },
+    "triage": {
+      "name": "pdf-vault-triage",
+      "framework": "langgraph",
+      "model": "triage",
+      "maxIterations": 4
+    }
+  },
+  "mcpServer": {
+    "name": "pdf-vault",
+    "version": "1.0.0"
+  }
+}

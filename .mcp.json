@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "pdf-vault": {
+      "command": "node",
+      "args": ["ai/mcp-server.js"],
+      "env": {}
+    }
+  }
+}

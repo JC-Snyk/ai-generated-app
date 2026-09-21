@@ -2,11 +2,16 @@ import express from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import { aiRouter } from './ai/routes';
 
 export const app = express();
 const upload = multer({ dest: 'uploads/' });
 
 app.use(express.static('public'));
+app.use(express.json());
+
+// AI features: assistant agent, upload triage, and component status.
+app.use('/ai', aiRouter);
 
 app.post('/upload', upload.single('pdf'), (req, res) => {
   if (!req.file) {

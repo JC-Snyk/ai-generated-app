@@ -13,6 +13,14 @@
     <h1>Download PDF</h1>
     <ul id="file-list"></ul>
 
+
+    <h1>Ask the Assistant</h1>
+    <form id="ask-form">
+      <input type="text" id="question" placeholder="What did I upload?" size="40" required />
+      <button type="submit">Ask</button>
+    </form>
+    <p id="answer"></p>
+
     <script>
       fetch('/download')
         .then(response => response.json())
@@ -28,6 +36,23 @@
           });
         })
         .catch(error => console.error('Error:', error));
+
+      document.getElementById('ask-form').addEventListener('submit', event => {
+        event.preventDefault();
+        const answer = document.getElementById('answer');
+        answer.textContent = 'Thinking...';
+        fetch('/ai/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: document.getElementById('question').value })
+        })
+          .then(response => response.json().then(data => {
+            if (!response.ok) { throw new Error(data.error || 'Request failed'); }
+            return data;
+          }))
+          .then(data => { answer.textContent = data.answer; })
+          .catch(error => { answer.textContent = error.message; });
+      });
     </script>
   </body>
 </html>
