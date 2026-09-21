@@ -1,6 +1,6 @@
 {
   "snyk.features.codeQuality": false,
-  "snyk.features.codeSecurity": true,
+  "snyk.features.codeSecurity": false,
   "snyk.features.infrastructureAsCode": false,
   "snyk.features.openSourceSecurity": false
 }
