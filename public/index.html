@@ -2,180 +2,32 @@
 <html>
   <head>
     <title>PDF Upload/Download</title>
-    <style>
-      body {
-        font-family: system-ui, sans-serif;
-        max-width: 42rem;
-        margin: 2rem auto;
-        line-height: 1.5;
-      }
-      .hint {
-        color: #444;
-        font-size: 0.95rem;
-      }
-      .file-row {
-        margin: 0.75rem 0;
-        padding: 0.75rem;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-      }
-      .file-row .meta {
-        font-size: 0.9rem;
-        color: #333;
-        margin-top: 0.35rem;
-      }
-      .file-row input[type='text'] {
-        width: 100%;
-        max-width: 20rem;
-        margin-right: 0.5rem;
-      }
-      .status {
-        font-size: 0.85rem;
-        color: #666;
-      }
-    </style>
   </head>
   <body>
     <h1>Upload PDF</h1>
-    <p class="hint">
-      After upload, use the <strong>Pocket Librarian</strong> (powered by Groq&apos;s free Llama models) to
-      turn cryptic file IDs into memorable shelf labels.
-    </p>
-    <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+    <form action="/upload" method="post" enctype="multipart/form-data">
       <input type="file" name="pdf" accept=".pdf" required />
       <button type="submit">Upload</button>
     </form>
-    <p id="upload-status" class="status" aria-live="polite"></p>
 
-    <h1>Your library</h1>
-    <p class="hint">
-      Each uploaded PDF gets an <strong>Ask Pocket Librarian</strong> button below (Groq AI shelf labels).
-    </p>
-    <ul id="file-list" style="list-style: none; padding: 0"></ul>
-    <p id="library-error" class="status" hidden></p>
+    <h1>Download PDF</h1>
+    <ul id="file-list"></ul>
 
     <script>
-      const uploadForm = document.getElementById('upload-form');
-      const uploadStatus = document.getElementById('upload-status');
-      const libraryError = document.getElementById('library-error');
-
-      uploadForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        uploadStatus.textContent = 'Uploading…';
-        const formData = new FormData(uploadForm);
-        try {
-          const res = await fetch('/upload', { method: 'POST', body: formData });
-          const text = await res.text();
-          if (!res.ok) {
-            uploadStatus.textContent = text || 'Upload failed';
-            return;
-          }
-          uploadStatus.textContent = text.includes('File uploaded')
-            ? 'Upload complete — use Ask Pocket Librarian on your file below.'
-            : text;
-          uploadForm.reset();
-          await loadFiles();
-        } catch (e) {
-          uploadStatus.textContent = 'Upload failed (network error)';
-        }
-      });
-
-      async function loadFiles() {
-        const fileList = document.getElementById('file-list');
-        fileList.innerHTML = '';
-        libraryError.hidden = true;
-        let response;
-        try {
-          response = await fetch('/api/files');
-        } catch (e) {
-          libraryError.hidden = false;
-          libraryError.textContent =
-            'Could not load your library. Restart the server from this project (npm run build && node index.js).';
-          return;
-        }
-        if (!response.ok) {
-          libraryError.hidden = false;
-          libraryError.textContent =
-            'Library API missing (HTTP ' +
-            response.status +
-            '). Run npm run build, then node index.js from the project folder.';
-          return;
-        }
-        const files = await response.json();
-
-        if (files.length === 0) {
-          fileList.innerHTML = '<li class="hint">No PDFs yet — upload one above.</li>';
-          return;
-        }
-
-        files.forEach(({ name, label }) => {
-          const row = document.createElement('li');
-          row.className = 'file-row';
-          row.dataset.filename = name;
-
-          const title = document.createElement('div');
-          const link = document.createElement('a');
-          link.href = `/download/${encodeURIComponent(name)}`;
-          link.textContent = label
-            ? `${label.emoji} ${label.displayName}`
-            : name;
-          title.appendChild(link);
-          if (label) {
-            const sub = document.createElement('div');
-            sub.className = 'meta';
-            sub.textContent = `${label.category} — ${label.oneLiner}`;
-            title.appendChild(sub);
-          }
-          row.appendChild(title);
-
-          const hintInput = document.createElement('input');
-          hintInput.type = 'text';
-          hintInput.placeholder = 'Optional hint (e.g. Q3 invoice for Acme)';
-          row.appendChild(hintInput);
-
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.textContent = 'Ask Pocket Librarian';
-          btn.addEventListener('click', () => requestShelfLabel(name, hintInput, btn));
-          row.appendChild(btn);
-
-          const status = document.createElement('div');
-          status.className = 'status';
-          row.appendChild(status);
-
-          fileList.appendChild(row);
-        });
-      }
-
-      async function requestShelfLabel(filename, hintInput, button) {
-        const status = button.nextElementSibling;
-        button.disabled = true;
-        status.textContent = 'Consulting the librarian…';
-        try {
-          const res = await fetch('/api/ai/shelf-label', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              filename,
-              hint: hintInput.value,
-              originalName: filename,
-            }),
+      fetch('/download')
+        .then(response => response.json())
+        .then(files => {
+          const fileList = document.getElementById('file-list');
+          files.forEach(file => {
+            const listItem = document.createElement('li');
+            const link = document.createElement('a');
+            link.href = `/download/${file}`;
+            link.textContent = file;
+            listItem.appendChild(link);
+            fileList.appendChild(listItem);
           });
-          const data = await res.json();
-          if (!res.ok) {
-            status.textContent = data.error || 'Something went wrong';
-            return;
-          }
-          status.textContent = 'Shelf label saved.';
-          await loadFiles();
-        } catch (e) {
-          status.textContent = 'Network error';
-        } finally {
-          button.disabled = false;
-        }
-      }
-
-      loadFiles().catch((err) => console.error(err));
+        })
+        .catch(error => console.error('Error:', error));
     </script>
   </body>
 </html>
